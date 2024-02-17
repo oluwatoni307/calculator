@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <style>
+        /* styles.css */
+
+        .calculator {
+            margin: 50px auto;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            width: 98%;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 24px;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 10px;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 18px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #e0e0e0;
+        }
+
+        button:active {
+            background-color: #ccc;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            input[type="text"] {
+                width: 94%;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            input[type="text"] {
+                width: 91%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="Calculator">
+        <input type="text" id="result" readonly>
+        <div class="buttons">
+            <button class="number" value="7">7</button>
+            <button class="number" value="8">8</button>
+            <button class="number" value="9">9</button>
+            <button class="operation" value="divide">/</button>
+            <button class="number" value="4">4</button>
+            <button class="number" value="5">5</button>
+            <button class="number" value="6">6</button>
+            <button class="operation" value="mutiply">*</button>
+
+            <button class="number" value="1">1</button>
+
+            <button class="number" value="2">2</button>
+            <button class="number" value="3">3</button>
+            <button class="operation" value="subtract">-</button>
+
+            <button class="number" value="0">0</button>
+            <button class="decimal" value=".">.</button>
+            <button class="clear" value="CE">CE</button>
+            <button class="operation" value="add">+</button>
+            <button class="equals" value="=">=</button>
+
+
+        </div>
+
+    </div>
+    <script>
+        // script.js
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const resultField = document.getElementById('result');
+            const buttons = document.querySelectorAll('.buttons button');
+
+            let currentNumber = '';
+            let firstOperand = null;
+            let operator = null;
+            let waitingForSecondOperand = false;
+
+            function resetCalculator() {
+                currentNumber = '';
+                firstOperand = null;
+                operator = null;
+                waitingForSecondOperand = false;
+                updateResultField('');
+            }
+
+            function updateResultField(value) {
+                resultField.value = value;
+            }
+
+            function handleNumberClick(number) {
+                if (waitingForSecondOperand) {
+                    currentNumber = String(number);
+                    waitingForSecondOperand = false;
+                } else {
+                    currentNumber += String(number);
+                }
+                updateResultField(currentNumber);
+            }
+
+            function handleOperationClick(newOperator) {
+                const inputValue = parseFloat(currentNumber);
+                if (firstOperand === null && !isNaN(inputValue)) {
+                    firstOperand = inputValue;
+                    updateResultField('');
+                    waitingForSecondOperand = true;
+                } else if (operator) {
+                    sendCalculationRequest();
+                    operator = newOperator;
+                    return;
+                }
+                operator = newOperator;
+            }
+
+            function sendCalculationRequest() {
+                const num1 = firstOperand;
+                const num2 = parseFloat(currentNumber);
+                const operation = operator;
+
+                fetch(`/${operation}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ num1, num2 })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const result = data.result;
+                        updateResultField(result);
+                        firstOperand = result;
+                        waitingForSecondOperand = true;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        resetCalculator();
+                    });
+            }
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const value = button.value;
+                    if (!isNaN(value) || value === '.') {
+       
+                        handleNumberClick(value);
+                    } else if (value === 'CE') {
+                        resetCalculator();
+                    } else if (value === '=') {
+                        sendCalculationRequest();
+                    } else {
+                        handleOperationClick(value);
+                    }
+                });
+            });
+        });
+
+    </script>
+</body>
+
+</html>
